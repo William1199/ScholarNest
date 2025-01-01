@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <style>
+        .card-img-top {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        p {
+            text-align: justify;
+            text-justify: inter-word;
+        }
+
+        .badge {
+            width: fit-content;
+            height: 25px;
+            align-content: center;
+        }
+
+        .image-container {
+            position: relative;
+            width: 200px; /* Đặt kích thước phù hợp */
+            height: 200px; /* Đặt kích thước phù hợp */
+        }
+
+        .image-container img {
+            position: absolute;
+            top: 0;
+            left: 10px;
+            width: 100%;
+            height: 100%;
+            transition: opacity 0.3s ease-in-out; /* Tạo hiệu ứng mờ dần */
+        }
+
+        .image-container .color {
+            opacity: 0; /* Ẩn hình "color" mặc định */
+        }
+
+        .image-container:hover .color {
+            opacity: 1; /* Hiển thị hình "color" khi hover */
+        }
+
+        .image-container:hover .no-color {
+            opacity: 0; /* Ẩn hình "no color" khi hover */
+        }
+    </style>
+    <!-- Page content-->
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Post content-->
+                <article>
+                    <!-- Post header-->
+                    <header class="mb-4">
+                        <!-- Post title-->
+                        <h1 class="fw-bolder mb-1" style="color: #6e543c">{{ articles.title }}!</h1>
+                        <!-- Post meta content-->
+                        <div class="text-muted fst-italic mb-2">Posted on {{ articles.createdDate }}
+                            by {{ articles.user.username }}</div>
+                        <!-- Apply button-->
+                        <div style="float: right;">
+                            {% if request.user.is_authenticated %}
+                                {% if apply_requests %}
+                                    {% if apply_requests.status == 'approved' %}
+                                        <button class="btn btn-success" disabled>Approved</button>
+                                    {% elif apply_requests.status == 'denied' %}
+                                        <button class="btn btn-danger" disabled>Denied</button>
+                                    {% else %}
+                                        <button class="btn btn-warning" disabled>Pending</button>
+                                    {% endif %}
+                                {% else %}
+                                    {% if request.user.is_student %}
+                                        {% if articles.admission_date < today %}
+                                            <button class="btn btn-secondary" disabled>Expired</button>
+                                        {% else %}
+                                            <form action="{% url 'apply-request' articles.slug %}" method="POST">
+                                                {% csrf_token %}
+                                                <button class="btn btn-primary"
+                                                        style="background-color: #d6ba73; border: white; padding: 3.75px 10px; font-size: 18px"
+                                                        type="submit">
+                                                    Apply Now!
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            {% else %}
+                                <p><a href="{% url 'signin' %}">Log in</a> to apply</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Post categories-->
+                        {% if articles.admission_date < today %}
+                            <a class="badge bg-danger text-decoration-none link-light" href="#!">
+                                Admission date: {{ articles.admission_date }}
+                            </a>
+                        {% else %}
+                            <a class="badge bg-secondary text-decoration-none link-light" href="#!">
+                                Admission date: {{ articles.admission_date }}
+                            </a>
+                        {% endif %}
+                        <a class="badge bg-secondary text-decoration-none link-light"
+                           href="#!">{{ articles.category }}</a>
+                        <a class="badge bg-secondary text-decoration-none link-light"
+                           href="#!">{{ articles.diploma_after_course }}
+                            degree</a>
+                        <a class="badge bg-secondary text-decoration-none link-light"
+                           href="#!">Location: {{ articles.location.name }}</a>
+                        <a class="badge bg-secondary text-decoration-none link-light" href="#!">
+                            Required: {{ articles.entry_language }} {{ articles.entry_points }}
+                        </a>
+                        <a class="badge bg-secondary text-decoration-none link-light" href="#!">
+                            Cost: {{ articles.costs }}
+                        </a>
+                        <a class="badge bg-secondary text-decoration-none link-light" href="#!">
+                            Course Length: {{ articles.course_length }}
+                        </a>
+                        {% if articles.slot > 0 %}
+                            <a class="badge bg-secondary text-decoration-none link-light"
+                               href="#!">Slot: {{ articles.slot }}</a>
+                        {% else %}
+                            <span class="badge bg-danger text-decoration-none link-light">Slot: Full</span>
+                        {% endif %}
+                    </header>
+                    <!-- Preview image figure-->
+                    <figure class="mb-4"><img class="img-fluid rounded" src="{{ articles.thumbnail.url }}" alt="..."/>
+                    </figure>
+                    <!-- Post content-->
+                    <section class="mb-5">
+                        <p class="fs-5 mb-4" style="text-align: justify">{{ articles.information | linebreaks }}</p>
+                    </section>
+                </article>
+                <!-- Comments section-->
+                <section class="mb-5">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <!-- Comment form-->
+
+                            {% if request.user.is_authenticated %}
+
+                                <form class="mb-4" method="POST">
+                                    {% csrf_token %}
+                                    {{ form.body }}
+                                    <br>
+                                    <button class="btn btn-primary"
+                                            style="width:100%;background-color: #d6ba73; border: white">Drop your
+                                        comment
+                                    </button>
+                                </form>
+                            {% else %}
+                                <h4>Login to drop a comment</h4>
+                                <br> <br>
+                            {% endif %}
+                            <!-- Comment with nested comments-->
+                            {% if comments %}
+                                {% for comment in comments %}
+                                    <div class="d-flex mb-4">
+                                        <!-- Parent comment-->
+                                        {% if comment.user.profile_pic %}
+                                            <div class="flex-shrink-0"><img style="width:50px" class="rounded-circle"
+                                                                            src="{{ comment.user.profile_pic.url }}"
+                                                                            alt="..."/></div>
+                                        {% else %}
+                                            <div class="flex-shrink-0"><img class="rounded-circle"
+                                                                            src="https://dummyimage.com/50x50/ced4da/6c757d.jpg"
+                                                                            alt="..."/></div>
+                                        {% endif %}
+                                        <div class="ms-3">
+                                            <div class="fw-bold">{{ comment.user.username }}</div>
+                                            {{ comment.body }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p>No comments yet. Be the first to comment!</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <!-- Side widgets-->
+            <div class="col-lg-4">
+                <!-- Search widget-->
+                <div class="card mb-4">
+                    <div class="card-header">Search</div>
+                    <div class="card-body">
+                        <form action="">
+                            <div class="input-group">
+                                <input class="form-control" name="search" type="text" placeholder="Enter search term..."
+                                       aria-label="Enter search term..." aria-describedby="button-search"/>
+                                <button class="btn btn-primary" style="background-color: #d6ba73; border: white"
+                                        id="button-search">Go!
+                                </button>
+                            </div>
+                            <br>
+                            {% if msg %}
+                                <p style="font-size: 20px;color: red">{{ msg }}</p>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+                <!-- Side widget-->
+                <div class="card mb-4">
+                    <div class="card-header">ScholarNest AI</div>
+                    <div class="image-container">
+                        <a href="http://localhost:8501/" target="_blank">
+                            <img src="{% static 'assets/scholarnest_ai_no_color.png' %}" alt=""
+                                 class="no-color">
+                            <img src="{% static 'assets/scholarnest_ai_color.png' %}" alt=""
+                                 class="color">
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        Don't let scholarship hunting stress you out. ScholarNest AI can help you streamline the
+                        process.
+                    </div>
+                </div>
+                <!-- Related Articles-->
+                <div class="card mb-4">
+                    <div class="card-header">Related Articles</div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% if not r_articles %}
+                                <p>Updating</p>
+                            {% endif %}
+                            {% for articles in r_articles %}
+                                <div class="col-lg-6 mb-4">
+                                    <!-- Blog post-->
+                                    <div class="card" style="height: 400px; overflow: hidden;">
+                                        <a href="{% url 'detail' articles.slug %}">
+                                            <img class="card-img-top" src="{{ articles.thumbnail.url }}" alt="..."
+                                                 style="height: 150px; object-fit: cover;">
+                                        </a>
+                                        <div class="card-body" style="height: 200px;">
+                                            <div class="small text-muted"
+                                                 style="font-size: 12px;">{{ articles.createdDate }}</div>
+                                            <h5 class="card-title h4"
+                                                style="font-size: 20px;color: #6e543c">{{ articles.title|truncatechars:"25" }}</h5>
+                                            <p class="card-text"
+                                               style="overflow: hidden; text-overflow: ellipsis">{{ articles.information|truncatechars:"50" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    form {
+        box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+        background-color: white;
+        width: 600px !important;
+        border-radius: 10px;
+        padding: 20px 20px 20px 20px !important;
+        margin: 20px auto !important;
+    }
+    form h4 {
+        margin-bottom: 20px !important;
+        text-align: center !important;
+    }
+    form p {
+        text-align: center;
+    }
+    form small {
+        color: red;
+    }
+    .country-select-flag {
+            display: none;
+        }
+</style>
+
+<form action="" method="POST" enctype="multipart/form-data">
+    <h4>Get Your Profile Updated!</h4>
+    {% csrf_token %}
+
+    <div class="row">
+        {% for field in form %}
+            <div class="col-md-6">
+                <div class="mb-3">
+                    {{ field.label_tag }}  <!-- Hiển thị tên trường ở đây -->
+                    {{ field }}  <!-- Hiển thị ô nhập -->
+                    {% if field.errors %}
+                        <small>{{ field.errors }}</small>  <!-- Hiển thị lỗi nếu có -->
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <button class="btn btn-primary" style="width: 100%;background-color: #d6ba73; border: white">Update Profile</button>
+</form>
+
+{% endblock content %}
